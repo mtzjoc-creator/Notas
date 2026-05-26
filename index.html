@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Apoyo Nani</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#2a0a1f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Apoyo Nani"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#2a0a1f;--paper:#fff0f6;--accent:#e91e8c;--accent2:#c2185b;--gold:#f48fb1;--muted:#a07080;--card:#fff;--border:#f8c8dc;--radius:16px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);font-family:'Space Mono',monospace;color:var(--ink);min-height:100vh}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+#install-banner{display:none;align-items:center;justify-content:space-between;background:var(--accent);color:#fff;padding:12px 16px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;gap:10px}
+#install-banner.show{display:flex}
+#install-btn{background:#fff;color:var(--accent);border:none;border-radius:20px;padding:6px 14px;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;cursor:pointer}
+#dismiss-btn{background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer}
+
+.header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--paper);z-index:50;border-bottom:2px solid var(--ink)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:19px}
+.logo-text span{color:var(--accent)}
+.badge{background:var(--ink);color:var(--paper);font-size:11px;font-family:'Syne',sans-serif;font-weight:700;padding:4px 10px;border-radius:20px}
+
+.capture-zone{margin:16px 20px;border:2.5px dashed var(--ink);border-radius:var(--radius);background:var(--card);overflow:hidden;position:relative;transition:.25s}
+.capture-zone.has-preview{border-style:solid;border-color:var(--accent)}
+.capture-inner{padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer}
+.cam-btn{width:72px;height:72px;background:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;border:none;cursor:pointer;transition:.15s}
+.cam-btn:hover{background:var(--accent);transform:scale(1.08)}
+.cap-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;text-align:center}
+.cap-hint{font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
+.preview-img{width:100%;max-height:220px;object-fit:cover;display:block}
+.prev-overlay{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.pill{background:var(--ink);color:var(--paper);border:none;border-radius:20px;padding:5px 12px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;cursor:pointer}
+.pill:hover{background:var(--accent)}
+.pill.danger{background:#c00}
+
+.type-row{display:flex;gap:7px;padding:0 20px;overflow-x:auto;scrollbar-width:none}
+.type-row::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:2px solid var(--border);background:var(--card);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;cursor:pointer;transition:.15s;white-space:nowrap}
+.chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip:hover:not(.active){border-color:var(--ink)}
+
+.proc-section{padding:14px 20px}
+.proc-btn{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:'Syne',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.proc-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(233,30,140,.35)}
+.proc-btn:disabled{opacity:.5;cursor:not-allowed}
+.spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.result-card{margin:0 20px 16px;background:var(--card);border:2px solid var(--ink);border-radius:var(--radius);overflow:hidden;animation:up .35s cubic-bezier(.16,1,.3,1)}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.res-header{background:var(--ink);color:var(--paper);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.res-badge{background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px}
+.res-body{padding:16px;line-height:1.7;font-size:13px;max-height:50vh;overflow-y:auto}
+.res-body h2{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:10px;color:var(--accent);border-bottom:2px solid var(--border);padding-bottom:7px}
+.res-body h3{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin:12px 0 5px;color:var(--accent2)}
+.res-body ul{padding-left:16px;margin:5px 0}
+.res-body li{margin-bottom:4px}
+.res-body .tag{display:inline-block;background:var(--gold);color:var(--ink);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;font-family:'Syne',sans-serif}
+.res-body .box{background:var(--paper);border-left:4px solid var(--accent);padding:9px 12px;border-radius:0 8px 8px 0;margin:9px 0;font-size:12px}
+.res-body .mn{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
+.dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--accent)}
+.dot.b{background:var(--accent2)}.dot.g{background:var(--gold)}
+
+.res-actions{padding:11px 16px;border-top:1.5px solid var(--border);display:flex;gap:7px;flex-wrap:wrap}
+.act-btn{padding:7px 12px;border-radius:10px;border:1.5px solid var(--border);background:transparent;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px}
+.act-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.act-btn.p{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.act-btn.word{background:#1e4fff;color:#fff;border-color:#1e4fff}
+.act-btn.word:hover{background:#1640cc}
+
+.nb-section{padding:0 20px 30px}
+.sec-title{font-family:'Syne',sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1.5px;background:var(--border)}
+.note-item{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:.15s;display:flex;align-items:flex-start;gap:11px}
+.note-item:hover{border-color:var(--ink);transform:translateX(3px)}
+.nthumb{width:42px;height:42px;border-radius:8px;flex-shrink:0;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.nthumb img{width:100%;height:100%;object-fit:cover}
+.nmeta{flex:1;min-width:0}
+.ntitle{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nsub{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.nbadge{background:var(--paper);border:1px solid var(--border);padding:1px 5px;border-radius:6px;font-size:10px;font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)}
+.note-actions{display:flex;gap:4px;margin-left:auto;align-items:center}
+.ndel,.ndl{background:none;border:none;font-size:15px;cursor:pointer;opacity:.4;padding:4px}
+.ndel:hover,.ndl:hover{opacity:1}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:20px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;z-index:999;transition:.3s cubic-bezier(.16,1,.3,1);white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.empty{text-align:center;padding:24px 16px;color:var(--muted);font-size:12px;line-height:1.8}
+.empty .e{font-size:32px;display:block;margin-bottom:8px}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div id="install-banner">
+    <span>📲 Instala Apoyo Nani en tu teléfono</span>
+    <button id="install-btn">Instalar</button>
+    <button id="dismiss-btn">✕</button>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">📸</div>
+      <div class="logo-text">Apoyo <span>Nani</span></div>
+    </div>
+    <div class="badge" id="cnt">0 notas</div>
+  </div>
+
+  <div class="capture-zone" id="zone">
+    <div class="capture-inner" onclick="document.getElementById('fi').click()">
+      <button class="cam-btn" type="button">📷</button>
+      <div class="cap-label">Fotografía tu clase o reunión</div>
+      <div class="cap-hint">Pizarrón, diapositivas, apuntes…<br/>La IA organiza la información al instante.</div>
+    </div>
+  </div>
+  <input type="file" id="fi" accept="image/*" capture="environment"/>
+
+  <div class="type-row" id="types"></div>
+
+  <div class="proc-section">
+    <button class="proc-btn" id="pbtn" disabled onclick="process()">📄 Generar Resumen</button>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="nb-section">
+    <div class="sec-title">Mi Cuaderno</div>
+    <div id="nb">
+      <div class="empty"><span class="e">📓</span>Tu cuaderno está vacío.<br/>Toma una foto y guarda tu primera nota.</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TYPES=[
+  {id:"summary",  icon:"📄",label:"Resumen"},
+  {id:"mindmap",  icon:"🧠",label:"Mapa Mental"},
+  {id:"schema",   icon:"📊",label:"Esquema"},
+  {id:"poster",   icon:"🎯",label:"Cartel"},
+  {id:"flashcard",icon:"⚡",label:"Flashcards"},
+  {id:"outline",  icon:"📋",label:"Índice"},
+];
+const PROMPTS={
+  summary:"Genera un RESUMEN del contenido visible en esta imagen.",
+  mindmap:"Genera un MAPA MENTAL del contenido de esta imagen.",
+  schema:"Genera un ESQUEMA jerárquico del contenido de esta imagen.",
+  poster:"Genera un CARTEL visual con los puntos clave de esta imagen.",
+  flashcard:"Genera FLASHCARDS de estudio basadas en el contenido de esta imagen.",
+  outline:"Genera un ÍNDICE estructurado del contenido de esta imagen.",
+};
+const SYS=`Eres un asistente experto en análisis visual de contenido educativo.
+Extrae TODA la información relevante y genera el tipo de salida solicitado.
+- RESUMEN: Párrafo breve (máx 120 palabras). Usa **negrita** para conceptos clave.
+- MAPA MENTAL: ## Tema Central, luego ### Ramas.
+- ESQUEMA: Estructura jerárquica numerada (I. > A. > 1.).
+- CARTEL: Título, 3-5 puntos, #hashtags al final.
+- FLASHCARDS: 4-6 pares **Q:** ... / **A:** ...
+- ÍNDICE: Lista ordenada de temas y subtemas.
+Responde SIEMPRE en español.`;
+
+let sel="summary",file=null,url=null,last=null,lastTitle="Nota";
+let nb=JSON.parse(localStorage.getItem("apoyo_nani")||"[]");
+let deferredPrompt=null;
+
+function init(){
+  renderTypes();renderNb();updCnt();
+  document.getElementById("fi").onchange=e=>{
+    const f=e.target.files?.[0];if(!f)return;
+    file=f;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);
+    const z=document.getElementById("zone");
+    z.classList.add("has-preview");
+    z.innerHTML=`<img src="${url}" class="preview-img"/><div class="prev-overlay"><button class="pill" onclick="document.getElementById('fi').click()">🔄 Cambiar</button><button class="pill danger" onclick="reset()">✕</button></div>`;
+    document.getElementById("result").innerHTML="";
+    updBtn();
+  };
+  window.addEventListener("beforeinstallprompt",e=>{
+    e.preventDefault();deferredPrompt=e;
+    document.getElementById("install-banner").classList.add("show");
+  });
+  document.getElementById("install-btn").onclick=async()=>{
+    if(!deferredPrompt)return;
+    deferredPrompt.prompt();
+    const{outcome}=await deferredPrompt.userChoice;
+    if(outcome==="accepted")toast("🎉 ¡App instalada!");
+    deferredPrompt=null;
+    document.getElementById("install-banner").classList.remove("show");
+  };
+  document.getElementById("dismiss-btn").onclick=()=>
+    document.getElementById("install-banner").classList.remove("show");
+}
+
+function renderTypes(){
+  document.getElementById("types").innerHTML=TYPES.map(t=>
+    `<button class="chip ${t.id===sel?'active':''}" onclick="selType('${t.id}')">${t.icon} ${t.label}</button>`
+  ).join("");
+}
+function selType(id){sel=id;renderTypes();updBtn();}
+function updBtn(){
+  const b=document.getElementById("pbtn"),t=TYPES.find(x=>x.id===sel);
+  b.disabled=!file;
+  b.innerHTML=file?`${t.icon} Generar ${t.label}`:`${t.icon} Sube una foto primero`;
+}
+
+function reset(){
+  file=null;if(url){URL.revokeObjectURL(url);url=null;}
+  document.getElementById("fi").value="";
+  const z=document.getElementById("zone");
+  z.classList.remove("has-preview");
+  z.innerHTML=`<div class="capture-inner" onclick="document.getElementById('fi').click()"><button class="cam-btn" type="button">📷</button><div class="cap-label">Fotografía tu clase o reunión</div><div class="cap-hint">Pizarrón, diapositivas, apuntes…<br/>La IA organiza la información al instante.</div></div>`;
+  document.getElementById("result").innerHTML="";
+  updBtn();
+}
+
+async function process(){
+  if(!file){toast("📸 Primero toma una foto");return;}
+  const b=document.getElementById("pbtn");
+  b.disabled=true;b.innerHTML=`<div class="spin"></div> Analizando con IA…`;
+  try{
+    const b64=await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result.split(",")[1]);rd.onerror=j;rd.readAsDataURL(file);});
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:SYS,
+        messages:[{role:"user",content:[
+          {type:"image",source:{type:"base64",media_type:file.type||"image/jpeg",data:b64}},
+          {type:"text",text:PROMPTS[sel]}
+        ]}]})
+    });
+    const d=await res.json();
+    const txt=(d.content||[]).map(c=>c.text||"").join("\n").trim();
+    txt?renderResult(txt):toast("⚠️ No se pudo procesar. Intenta de nuevo.");
+  }catch{toast("❌ Error de conexión.");}
+  updBtn();
+}
+
+function renderResult(txt){
+  last=txt;
+  const t=TYPES.find(x=>x.id===sel);
+  const now=new Date();
+  lastTitle=`${t.label} — ${now.toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}`;
+  document.getElementById("result").innerHTML=`
+    <div class="result-card">
+      <div class="res-header"><span>✨ Resultado</span><span class="res-badge">${t.icon} ${t.label}</span></div>
+      <div class="res-body">${md(txt)}</div>
+      <div class="res-actions">
+        <button class="act-btn p" onclick="save()">💾 Guardar</button>
+        <button class="act-btn word" onclick="exportWord(last,lastTitle)">📝 Word</button>
+        <button class="act-btn" onclick="copy()">📋 Copiar</button>
+      </div>
+    </div>`;
+}
+
+function exportWord(content,title){
+  const body=content
+    .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+    .replace(/\*(.*?)\*/g,'<i>$1</i>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^#+ (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/(<li>[\s\S]*?<\/li>\n?)+/g,m=>`<ul>${m}</ul>`);
+
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:w="urn:schemas-microsoft-com:office:word"
+    xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="utf-8"/><title>${title}</title>
+  <style>
+    body{font-family:Calibri,sans-serif;font-size:11pt;margin:2.5cm;color:#1a1a2e}
+    h1{color:#e91e8c;font-size:20pt;margin-bottom:12pt;border-bottom:2pt solid #f8c8dc;padding-bottom:6pt}
+    h2{color:#c2185b;font-size:14pt;margin:14pt 0 6pt}
+    h3{color:#880e4f;font-size:12pt;margin:10pt 0 4pt}
+    ul{margin-left:18pt}li{margin-bottom:4pt}
+    blockquote{border-left:4pt solid #e91e8c;padding-left:10pt;margin:8pt 0;color:#666}
+  </style></head>
+  <body>
+    <h1>📸 Apoyo Nani — ${title}</h1>
+    ${body}
+    <p style="margin-top:24pt;font-size:9pt;color:#aaa">Generado con Apoyo Nani · ${new Date().toLocaleString('es')}</p>
+  </body></html>`;
+
+  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${title}.doc`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("📝 Descargando Word…");
+}
+
+function save(){
+  if(!last)return;
+  const t=TYPES.find(x=>x.id===sel),now=new Date();
+  nb.unshift({
+    id:Date.now(),
+    title:`${t.icon} ${now.toLocaleDateString('es',{day:'2-digit',month:'short'})} ${now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})}`,
+    date:now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),
+    type:sel,content:last,img:url
+  });
+  localStorage.setItem("apoyo_nani",JSON.stringify(nb));
+  renderNb();updCnt();toast("💾 Guardado en tu cuaderno");
+}
+
+function copy(){navigator.clipboard?.writeText(last||"");toast("📋 Copiado");}
+
+function renderNb(){
+  const el=document.getElementById("nb");
+  if(!nb.length){
+    el.innerHTML=`<div class="empty"><span class="e">📓</span>Tu cuaderno está vacío.<br/>Toma una foto y guarda tu primera nota.</div>`;
+    return;
+  }
+  el.innerHTML=nb.map(n=>{
+    const t=TYPES.find(x=>x.id===n.type);
+    const wTitle=`${t?.label||'Nota'} — ${n.title}`;
+    const th=n.img?`<div class="nthumb"><img src="${n.img}"/></div>`:`<div class="nthumb">📸</div>`;
+    return `<div class="note-item" onclick="openNote(${n.id})">
+      ${th}
+      <div class="nmeta">
+        <div class="ntitle">${n.title}</div>
+        <div class="nsub"><span>${n.date}</span><span class="nbadge">${t?.icon} ${t?.label}</span></div>
+      </div>
+      <div class="note-actions">
+        <button class="ndl" title="Descargar Word" onclick="event.stopPropagation();exportNoteWord(${n.id})">📝</button>
+        <button class="ndel" onclick="event.stopPropagation();delNote(${n.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function exportNoteWord(id){
+  const n=nb.find(x=>x.id===id);if(!n)return;
+  const t=TYPES.find(x=>x.id===n.type);
+  exportWord(n.content,`${t?.label||'Nota'} — ${n.title}`);
+}
+
+function openNote(id){
+  const n=nb.find(x=>x.id===id);if(!n)return;
+  const t=TYPES.find(x=>x.id===n.type);
+  last=n.content;lastTitle=`${t?.label||'Nota'} — ${n.title}`;
+  document.getElementById("result").innerHTML=`
+    <div class="result-card">
+      <div class="res-header"><span>${n.title}</span><span class="res-badge">${t?.icon} ${t?.label}</span></div>
+      <div class="res-body">${md(n.content)}</div>
+      <div class="res-actions">
+        <button class="act-btn word" onclick="exportWord(last,lastTitle)">📝 Word</button>
+        <button class="act-btn" onclick="copy()">📋 Copiar</button>
+        <button class="act-btn" onclick="document.getElementById('result').innerHTML=''">✕ Cerrar</button>
+      </div>
+    </div>`;
+  document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+
+function delNote(id){
+  nb=nb.filter(n=>n.id!==id);
+  localStorage.setItem("apoyo_nani",JSON.stringify(nb));
+  renderNb();updCnt();toast("🗑 Nota eliminada");
+}
+
+function updCnt(){
+  document.getElementById("cnt").textContent=`${nb.length} nota${nb.length!==1?'s':''}`;
+}
+
+function md(t){
+  return t
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^#+ (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/^> (.+)$/gm,'<div class="box">$1</div>')
+    .replace(/#(\w+)/g,'<span class="tag">#$1</span>')
+    .replace(/\*\*Q:\*\* (.+)/g,'<div class="mn"><div class="dot b"></div><div><strong>❓ $1</strong></div></div>')
+    .replace(/\*\*A:\*\* (.+)/g,'<div class="mn"><div class="dot g"></div><div>✅ $1</div></div>')
+    .replace(/(<li>[\s\S]*?<\/li>\n?)+/g,m=>`<ul>${m}</ul>`);
+}
+
+let tt;
+function toast(m){
+  const e=document.getElementById("toast");
+  e.textContent=m;e.classList.add("show");
+  clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("show"),2500);
+}
+
+if("serviceWorker" in navigator)
+  navigator.serviceWorker.register("/sw.js").catch(()=>{});
+
+init();
+</script>
+</body>
+</html>

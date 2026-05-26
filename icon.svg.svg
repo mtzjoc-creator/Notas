@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo -->
+  <rect width="512" height="512" rx="100" fill="#2a0a1f"/>
+  <!-- Círculo decorativo -->
+  <circle cx="256" cy="256" r="180" fill="#e91e8c" opacity="0.15"/>
+  <!-- Cámara body -->
+  <rect x="136" y="186" width="240" height="180" rx="28" fill="#e91e8c"/>
+  <!-- Lente exterior -->
+  <circle cx="256" cy="276" r="62" fill="#2a0a1f"/>
+  <!-- Lente interior -->
+  <circle cx="256" cy="276" r="44" fill="#fff0f6"/>
+  <!-- Lente centro -->
+  <circle cx="256" cy="276" r="28" fill="#c2185b"/>
+  <!-- Flash -->
+  <rect x="200" y="162" width="48" height="28" rx="10" fill="#e91e8c"/>
+  <!-- Botón -->
+  <circle cx="334" cy="210" r="12" fill="#fff0f6" opacity="0.5"/>
+  <!-- Brillo lente -->
+  <circle cx="244" cy="264" r="8" fill="#fff" opacity="0.4"/>
+</svg>
