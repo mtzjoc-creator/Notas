@@ -26,9 +26,10 @@ body{background:var(--paper);font-family:'Space Mono',monospace;color:var(--ink)
 .badge{background:var(--ink);color:var(--paper);font-size:11px;font-family:'Syne',sans-serif;font-weight:700;padding:4px 10px;border-radius:20px}
 
 /* API KEY BANNER */
-#key-banner{background:#fff3cd;border-bottom:2px solid #f5c842;padding:10px 16px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
+#key-banner{background:#e2f0d9;border-bottom:2px solid #70ad47;padding:10px 16px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 #key-banner.show{display:flex}
-#key-banner span{font-size:12px;flex:1}
+#key-banner span{font-size:12px;flex:1;color:#385723}
+#key-banner a{color:#c2185b;font-weight:700;text-decoration:none}
 #key-input{border:1.5px solid var(--ink);border-radius:8px;padding:6px 10px;font-size:11px;font-family:'Space Mono',monospace;flex:1;min-width:160px}
 #key-save{background:var(--ink);color:var(--paper);border:none;border-radius:8px;padding:6px 12px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap}
 
@@ -122,14 +123,12 @@ input[type=file]{display:none}
 <body>
 <div class="app">
 
-  <!-- API KEY BANNER -->
   <div id="key-banner">
-    <span>🔑 Ingresa tu API Key de Anthropic para activar la IA</span>
-    <input id="key-input" type="password" placeholder="sk-ant-..."/>
+    <span>🔑 Configura tu API Key de Google (gratis en <a href="https://aistudio.google.com/" target="_blank">AI Studio</a>)</span>
+    <input id="key-input" type="password" placeholder="AIzaSy..."/>
     <button id="key-save" onclick="saveKey()">Guardar</button>
   </div>
 
-  <!-- HEADER -->
   <div class="header">
     <div class="logo">
       <div class="logo-icon">📸</div>
@@ -138,7 +137,6 @@ input[type=file]{display:none}
     <div class="badge" id="cnt">0 notas</div>
   </div>
 
-  <!-- SESIÓN DE FOTOS -->
   <div class="session-section">
     <div class="sec-label">Sesión de fotos</div>
     <div id="photo-area"></div>
@@ -152,20 +150,16 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- TIPO -->
   <div class="type-row" id="types"></div>
 
-  <!-- BOTÓN GENERAR -->
   <div class="proc-section">
     <button class="proc-btn" id="pbtn" disabled onclick="process()">
       📷 Selecciona fotos para generar
     </button>
   </div>
 
-  <!-- RESULTADO -->
   <div id="result"></div>
 
-  <!-- CUADERNO -->
   <div class="nb-section">
     <div class="sec-label" style="margin-bottom:10px">Mi Cuaderno</div>
     <div id="nb">
@@ -211,7 +205,7 @@ Responde SIEMPRE en español. Integra la información de todas las imágenes com
 
 // ─── STATE ────────────────────────────────
 let sel="summary";
-let photos=[]; // {id, file, url, b64, selected}
+let photos=[]; 
 let last=null, lastTitle="Nota";
 let nb=JSON.parse(localStorage.getItem("apoyo_nani")||"[]");
 
@@ -333,7 +327,7 @@ function updBtn(selCount){
     : `📷 Selecciona fotos para generar`;
 }
 
-// ─── PROCESAR ─────────────────────────────
+// ─── PROCESAR CON GOOGLE GEMINI ───────────
 async function process(){
   const selected=photos.filter(p=>p.selected);
   if(!selected.length){toast("📷 Selecciona al menos una foto");return;}
@@ -348,40 +342,40 @@ async function process(){
   b.innerHTML=`<div class="spin"></div> Analizando ${selected.length} foto(s)…`;
 
   try{
-    const imgBlocks=[];
+    const parts=[];
+    
+    // Inyectar imágenes en formato Gemini API
     for(const p of selected){
       const b64=await getB64(p);
-      imgBlocks.push({
-        type:"image",
-        source:{type:"base64",media_type:p.file.type||"image/jpeg",data:b64}
+      parts.push({
+        inlineData: {
+          mimeType: p.file.type || "image/jpeg",
+          data: b64
+        }
       });
     }
-    imgBlocks.push({type:"text",text:PROMPTS[sel]});
+    
+    // El sistema de prompts se acopla como directiva y contenido
+    parts.push({ text: `${SYS}\n\nInstrucción de tarea:\n${PROMPTS[sel]}` });
 
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+    const res=await fetch(url, {
       method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "x-api-key":key,
-        "anthropic-version":"2023-06-01"
-      },
-      body:JSON.stringify({
-        model:"claude-3-5-sonnet-20241022",
-        max_tokens:1500,
-        system:SYS,
-        messages:[{role:"user",content:imgBlocks}]
-      })
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ contents: [{ parts: parts }] })
     });
 
     const d=await res.json();
+    
     if(d.error){
       toast("❌ " + (d.error.message || "Error de API"));
     } else {
-      const txt=(d.content||[]).map(c=>c.text||"").join("\n").trim();
-      txt?renderResult(txt):toast("⚠️ Sin respuesta. Intenta de nuevo.");
+      const txt = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      txt ? renderResult(txt) : toast("⚠️ Sin respuesta. Intenta de nuevo.");
     }
   }catch(e){
-    toast("❌ Error de conexión. Revisa tu red.");
+    toast("❌ Error de conexión o formato.");
   }
   updBtn(photos.filter(p=>p.selected).length);
 }
@@ -522,7 +516,7 @@ function updCnt(){document.getElementById("cnt").textContent=`${nb.length} nota$
 // ─── MARKDOWN ─────────────────────────────
 function md(t){
   return t
-    .replace(/\*\*(.*?)\*\"/g,'<strong>$1</strong>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.*?)\*/g,'<em>$1</em>')
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
