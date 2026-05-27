@@ -1,5 +1,12 @@
-const CACHE = "apoyo-nani-v2";
-const ASSETS = ["/", "/index.html", "/manifest.json", "/icon.svg"];
+const CACHE = "apoyo-nani-v3";
+const ASSETS = [
+  "/Notas/",
+  "/Notas/index.html",
+  "/Notas/manifest.json",
+  "/Notas/sw.js",
+  "/Notas/icon-192.png",
+  "/Notas/icon-512.png"
+];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
