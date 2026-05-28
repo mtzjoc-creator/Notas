@@ -129,6 +129,9 @@ input[type=file]{display:none}
     <button id="key-save" onclick="saveKey()">Guardar</button>
   </div>
 
+  <!-- INPUT CÁMARA / GALERÍA -->
+  <input type="file" id="fi" accept="image/*" capture="environment" multiple/>
+
   <div class="header">
     <div class="logo">
       <div class="logo-icon">📸</div>
@@ -172,7 +175,6 @@ input[type=file]{display:none}
 </div>
 
 <div class="toast" id="toast"></div>
-<input type="file" id="fi" accept="image/*" capture="environment" multiple/>
 
 <script>
 // ─── CONFIG ───────────────────────────────
@@ -285,11 +287,11 @@ function renderPhotos(){
   const selected=photos.filter(p=>p.selected);
 
   if(photos.length===0){
-    area.innerHTML=`<div class="session-empty" onclick="document.getElementById('fi').click()">
+    area.innerHTML=`<label for="fi" class="session-empty" style="display:block; width:100%; cursor:pointer;">
       <span class="e">📷</span>
       Toca para agregar fotos de tu clase o exposición.<br/>
       <span style="font-size:10px;margin-top:4px;display:block">Puedes agregar varias y elegir cuáles usar</span>
-    </div>`;
+    </label>`;
     selBar.style.display="none";
   } else {
     const grid=photos.map(p=>`
