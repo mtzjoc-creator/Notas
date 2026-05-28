@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Apoyo Nani"/>
-<link rel="apple-touch-icon" href="icon-192.png"/>
+<link class="apple-touch-icon" href="icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
 :root{--ink:#2a0a1f;--paper:#fff0f6;--accent:#e91e8c;--accent2:#c2185b;--gold:#f48fb1;--muted:#a07080;--card:#fff;--border:#f8c8dc;--radius:16px}
@@ -123,7 +123,6 @@ input[type=file]{display:none}
 <body>
 <div class="app">
 
-  <!-- API KEY BANNER -->
   <div id="key-banner">
     <div class="kb-title">🔑 Configura tu API Key de Google (gratis)</div>
     <div class="kb-hint">
@@ -138,7 +137,6 @@ input[type=file]{display:none}
     <button id="key-edit" onclick="editKey()">✏️ Cambiar key guardada</button>
   </div>
 
-  <!-- HEADER -->
   <div class="header">
     <div class="logo">
       <div class="logo-icon">📸</div>
@@ -147,7 +145,6 @@ input[type=file]{display:none}
     <div class="badge" id="cnt">0 notas</div>
   </div>
 
-  <!-- SESIÓN -->
   <div class="session-section">
     <div class="sec-label">Sesión de fotos</div>
     <div id="photo-area"></div>
@@ -161,20 +158,16 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- TIPOS -->
   <div class="type-row" id="types"></div>
 
-  <!-- GENERAR -->
   <div class="proc-section">
     <button class="proc-btn" id="pbtn" disabled onclick="process()">
       📷 Selecciona fotos para generar
     </button>
   </div>
 
-  <!-- RESULTADO -->
   <div id="result"></div>
 
-  <!-- CUADERNO -->
   <div class="nb-section">
     <div class="sec-label" style="margin-bottom:10px">Mi Cuaderno</div>
     <div id="nb"></div>
@@ -298,11 +291,12 @@ function renderPhotos() {
   const selCount = photos.filter(p => p.selected).length;
 
   if (!photos.length) {
-    area.innerHTML = `<div class="session-empty" onclick="document.getElementById('fi').click()">
+    // Usamos un label nativo 'for="fi"' que el sistema operativo NUNCA bloqueará al hacer clic
+    area.innerHTML = `<label for="fi" class="session-empty" style="display:block; width:100%; cursor:pointer;">
       <span class="e">📷</span>
-      Toca para agregar fotos de tu clase o exposición.<br/>
-      <span style="font-size:10px;display:block;margin-top:4px">Agrega varias y elige cuáles analizar</span>
-    </div>`;
+      Toca aquí para abrir la cámara o galería.<br/>
+      <span style="font-size:10px;display:block;margin-top:4px;color:var(--accent);font-weight:bold;">👉 PRESIONA AQUÍ PARA SUBIR APUNTES 👈</span>
+    </label>`;
     bar.style.display = "none";
   } else {
     const thumbs = photos.map(p => `
@@ -311,11 +305,13 @@ function renderPhotos() {
         <div class="check">✓</div>
         <button class="del-btn" onclick="event.stopPropagation();removePhoto(${p.id})">✕</button>
       </div>`).join("");
+    
+    // También transformamos el botón de "Más fotos" en un label nativo por seguridad
     area.innerHTML = `<div class="photo-grid">
       ${thumbs}
-      <div class="add-btn" onclick="document.getElementById('fi').click()">
+      <label for="fi" class="add-btn">
         <span>➕</span><p>Más fotos</p>
-      </div>
+      </label>
     </div>`;
     bar.style.display = "flex";
     document.getElementById("sel-count").textContent = selCount;
@@ -507,6 +503,7 @@ function openNote(id) {
   document.getElementById("result").scrollIntoView({ behavior: "smooth" });
 }
 
+// ── DEL NOTE ───────────────────────────────────────────
 function delNote(id) {
   nb = nb.filter(n => n.id !== id);
   localStorage.setItem("apoyo_nani", JSON.stringify(nb));
